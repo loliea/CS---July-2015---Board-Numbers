@@ -80,6 +80,9 @@ ggplot(revenue_amj_all_graph, aes(x=dateClicked, fill=vendorName)) + geom_histog
 revenue_amj_all_graph <- filter(revenue_amj_all, saleDate > "2015-06-05")
 ggplot(revenue_amj_all_graph, aes(x=saleDate, fill=vendorName)) + geom_histogram()
 
+revenue_amj_all_graph_noQuin <- filter(revenue_amj_all, timeClicked > "2015-06-05" & !(vendorName %in% "Quinstreet"))
+ggplot(revenue_amj_all_graph_noQuin, aes(x=timeClicked, fill=vendorName)) + geom_histogram()
+
 hist(revenue_amj_all$saleDate, breaks = "days", format = "%d-%m")
 ## - END GRAPH EXPLORATION
 
@@ -137,3 +140,13 @@ summarise(group_by(revenue_amj_all_reg_good, vendorName),
           avg_time_to_purch = mean(as.numeric(saleDateTime - regCompleteDate)/nhour), 
           num = n(),
           tot_Sales = sum(amount))
+
+nb_trans_by_user <- summarise(group_by(revenue_amj_all_type, userToken, typeUser, vendorName, store), nb_trans = n())
+nb_trans_by_user.2 <- summarise(group_by(nb_trans_by_user, typeUser, nb_trans, vendorName, store), n())
+write.table(nb_trans_by_user.2, pipe("pbcopy"), sep="\t", row.names=FALSE, col.names=TRUE)
+
+
+user_multiple_trans <- filter(nb_trans_by_user, nb_trans>1 & nchar(userToken) == 36)
+user_multiple_trans_list <- inner_join(user_multiple_trans, revenue_amj_all, by = "userToken")
+user_multiple_trans_list <- user_multiple_trans_list[,-9]
+
